@@ -8,6 +8,11 @@ public class FixesListener extends PluginListener {
     }
 
     @Override
+    public boolean onFlow(Block blockFrom, Block blockTo) {
+        return FireSpreadFix.getInstance().shouldCancelFlow(blockFrom, blockTo);
+    }
+
+    @Override
     public boolean onBlockBreak(Player player, Block block) {
         return SpawnProtection.getInstance().shouldBlockBreak(player, block);
     }
@@ -50,6 +55,10 @@ public class FixesListener extends PluginListener {
             handleSpawnRadius(player, split);
             return true;
         }
+        if (cmd.equalsIgnoreCase("/firespread")) {
+            handleFireSpread(player, split);
+            return true;
+        }
         return false;
     }
 
@@ -64,6 +73,10 @@ public class FixesListener extends PluginListener {
         }
         if (cmd.equalsIgnoreCase("/spawnradius")) {
             handleSpawnRadius(null, split);
+            return true;
+        }
+        if (cmd.equalsIgnoreCase("/firespread")) {
+            handleFireSpread(null, split);
             return true;
         }
         return false;
@@ -84,6 +97,7 @@ public class FixesListener extends PluginListener {
                 + " (radius " + spawn.getRadius() + ")");
         reply(sender, " lighting auto-fix: " + (lighting.isEnabled() ? "on" : "off")
                 + " (" + lighting.chunksNudged() + " chunks nudged so far)");
+        reply(sender, " fire spread protection: " + (FireSpreadFix.getInstance().isEnabled() ? "on" : "off"));
     }
 
     private void handleSpawnRadius(Player sender, String[] split) {
@@ -104,6 +118,29 @@ public class FixesListener extends PluginListener {
                     + " (+" + spawn.getBuffer() + " buffer).");
         } catch (NumberFormatException e) {
             reply(sender, "'" + split[1] + "' isn't a number.");
+        }
+    }
+
+    private void handleFireSpread(Player sender, String[] split) {
+        if (!canUse(sender, "/firespread")) {
+            deny(sender);
+            return;
+        }
+
+        if (split.length < 2) {
+            reply(sender, "Usage: /firespread <on|off>");
+            return;
+        }
+
+        FireSpreadFix fire = FireSpreadFix.getInstance();
+        if (split[1].equalsIgnoreCase("on")) {
+            fire.setEnabled(true);
+            reply(sender, "Fire spread protection enabled.");
+        } else if (split[1].equalsIgnoreCase("off")) {
+            fire.setEnabled(false);
+            reply(sender, "Fire spread protection disabled.");
+        } else {
+            reply(sender, "Usage: /firespread <on|off>");
         }
     }
 

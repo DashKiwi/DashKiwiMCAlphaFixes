@@ -27,6 +27,8 @@ public class ServerFixes extends Plugin {
         etc.getInstance().getLoader().addListener(
                 PluginLoader.Hook.EXPLODE, listener, this, PluginListener.Priority.MEDIUM);
         etc.getInstance().getLoader().addListener(
+                PluginLoader.Hook.FLOW, listener, this, PluginListener.Priority.MEDIUM);
+        etc.getInstance().getLoader().addListener(
                 PluginLoader.Hook.BLOCK_BROKEN, listener, this, PluginListener.Priority.MEDIUM);
         etc.getInstance().getLoader().addListener(
                 PluginLoader.Hook.BLOCK_PLACE, listener, this, PluginListener.Priority.MEDIUM);
@@ -41,6 +43,7 @@ public class ServerFixes extends Plugin {
 
         etc.getInstance().addCommand("/fixes", "- Show ServerFixes status");
         etc.getInstance().addCommand("/spawnradius", "<blocks> - Set the spawn-protection radius");
+        etc.getInstance().addCommand("/firespread", "<on|off> - Toggle fire spread protection");
 
         log.info("[ServerFixes] Enabled. " + LightingFix.getInstance().chunksNudged()
                 + " chunk(s) already nudged for lighting.");
@@ -50,6 +53,7 @@ public class ServerFixes extends Plugin {
     public void disable() {
         etc.getInstance().removeCommand("/fixes");
         etc.getInstance().removeCommand("/spawnradius");
+        etc.getInstance().removeCommand("/firespread");
 
         LightingFix.getInstance().save();
 

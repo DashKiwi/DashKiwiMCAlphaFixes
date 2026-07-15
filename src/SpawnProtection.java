@@ -94,7 +94,6 @@ public class SpawnProtection {
         int status = block.getStatus();
         if (status != CREEPER_STATUS && status != TNT_STATUS) return false;
 
-
         double distSq = horizontalDistanceSqFromSpawn(block.getX(), block.getZ());
         double maxDist = radius + buffer;
 
