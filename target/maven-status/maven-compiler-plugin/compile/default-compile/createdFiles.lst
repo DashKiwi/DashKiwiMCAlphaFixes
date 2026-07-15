@@ -1,4 +1,5 @@
 FixesListener.class
 LightingFix.class
 ServerFixes.class
+FireSpreadFix.class
 SpawnProtection.class
