@@ -91,8 +91,9 @@ public class SpawnProtection {
 
     public boolean shouldCancelExplosion(Block block) {
         if (!explosionProtectionEnabled) return false;
-        if (block.getStatus() != CREEPER_STATUS) return false;
-        if (block.getStatus() != TNT_STATUS) return false;
+        int status = block.getStatus();
+        if (status != CREEPER_STATUS && status != TNT_STATUS) return false;
+
 
         double distSq = horizontalDistanceSqFromSpawn(block.getX(), block.getZ());
         double maxDist = radius + buffer;
