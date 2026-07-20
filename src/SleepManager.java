@@ -17,10 +17,13 @@ public class SleepManager {
 
     private static SleepManager instance;
 
+    private boolean enabled = true;
+
     // Player names (lowercase) currently "asleep" for tonight.
     private final Set<String> sleeping = Collections.synchronizedSet(new HashSet<String>());
 
     private SleepManager() {
+        load();
     }
 
     public static synchronized SleepManager getInstance() {
@@ -30,9 +33,31 @@ public class SleepManager {
         return instance;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        if (!enabled) {
+            sleeping.clear();
+        }
+        SettingsStore.getInstance().set("sleep.enabled", enabled);
+        SettingsStore.getInstance().save();
+    }
+
+    private void load() {
+        enabled = SettingsStore.getInstance().getBoolean("sleep.enabled", true);
+    }
+
     public void handleSleep(Player player) {
         if (player == null) {
             return; // console can't sleep
+        }
+
+        if (!enabled) {
+            player.sendMessage("/sleep is currently disabled on this server.");
+            return;
         }
 
         long time = etc.getServer().getTime() % DAY_LENGTH;

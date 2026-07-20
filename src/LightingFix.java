@@ -13,7 +13,11 @@ import java.util.logging.Logger;
 public class LightingFix {
     private static final Logger log = Logger.getLogger("Minecraft");
     private static final String CHUNKS_FILE = "serverfixes-relit-chunks.dat";
-    private static final int SAMPLE_STEP = 4; // blocks between sample columns within a chunk
+    // Sample offsets within a chunk (0-15 on each axis). This must include 15,
+    // not just multiples of the old step size - a chunk is only ever nudged
+    // once, so if the far edge (offset 13-15) is never sampled here, that
+    // strip along the edge of every single chunk never gets relit at all.
+    private static final int[] SAMPLE_OFFSETS = {0, 4, 8, 12, 15};
 
     private static LightingFix instance;
 
@@ -35,6 +39,12 @@ public class LightingFix {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        SettingsStore.getInstance().set("lighting.enabled", enabled);
+        SettingsStore.getInstance().save();
     }
 
     public int chunksNudged() {
@@ -67,8 +77,8 @@ public class LightingFix {
 
         relitChunks.add(key);
 
-        for (int ox = 0; ox <= 12; ox += SAMPLE_STEP) {
-            for (int oz = 0; oz <= 12; oz += SAMPLE_STEP) {
+        for (int ox : SAMPLE_OFFSETS) {
+            for (int oz : SAMPLE_OFFSETS) {
                 int wx = baseX + ox;
                 int wz = baseZ + oz;
                 int topY = etc.getServer().getHighestBlockY(wx, wz);
@@ -87,6 +97,8 @@ public class LightingFix {
     // persistence
 
     private void load() {
+        enabled = SettingsStore.getInstance().getBoolean("lighting.enabled", true);
+
         File file = new File(CHUNKS_FILE);
         if (!file.exists()) return;
 

@@ -64,8 +64,16 @@ public class FixesListener extends PluginListener {
             handleFireSpread(player, split);
             return true;
         }
+        if (cmd.equalsIgnoreCase("/lightingfix")) {
+            handleLightingFix(player, split);
+            return true;
+        }
         if (cmd.equalsIgnoreCase("/sleep")) {
-            SleepManager.getInstance().handleSleep(player);
+            if (isToggleArg(split)) {
+                handleSleepToggle(player, split);
+            } else {
+                SleepManager.getInstance().handleSleep(player);
+            }
             return true;
         }
         if (cmd.equalsIgnoreCase("/worlddownload")) {
@@ -92,6 +100,15 @@ public class FixesListener extends PluginListener {
             handleFireSpread(null, split);
             return true;
         }
+        if (cmd.equalsIgnoreCase("/lightingfix")) {
+            handleLightingFix(null, split);
+            return true;
+        }
+        if (cmd.equalsIgnoreCase("/sleep")) {
+            // Console can't vote to sleep, only toggle the command on/off.
+            handleSleepToggle(null, split);
+            return true;
+        }
         if (cmd.equalsIgnoreCase("/worlddownload")) {
             handleWorldDownload(null, split);
             return true;
@@ -115,6 +132,7 @@ public class FixesListener extends PluginListener {
         reply(sender, " lighting auto-fix: " + (lighting.isEnabled() ? "on" : "off")
                 + " (" + lighting.chunksNudged() + " chunks nudged so far)");
         reply(sender, " fire spread protection: " + (FireSpreadFix.getInstance().isEnabled() ? "on" : "off"));
+        reply(sender, " /sleep vote: " + (SleepManager.getInstance().isEnabled() ? "on" : "off"));
     }
 
     private void handleSpawnRadius(Player sender, String[] split) {
@@ -159,6 +177,53 @@ public class FixesListener extends PluginListener {
         } else {
             reply(sender, "Usage: /firespread <on|off>");
         }
+    }
+
+    private void handleLightingFix(Player sender, String[] split) {
+        if (!canUse(sender, "/lightingfix")) {
+            deny(sender);
+            return;
+        }
+
+        if (split.length < 2) {
+            reply(sender, "Usage: /lightingfix <on|off>");
+            return;
+        }
+
+        LightingFix lighting = LightingFix.getInstance();
+        if (split[1].equalsIgnoreCase("on")) {
+            lighting.setEnabled(true);
+            reply(sender, "Lighting auto-fix enabled.");
+        } else if (split[1].equalsIgnoreCase("off")) {
+            lighting.setEnabled(false);
+            reply(sender, "Lighting auto-fix disabled.");
+        } else {
+            reply(sender, "Usage: /lightingfix <on|off>");
+        }
+    }
+
+    // True if this /sleep invocation is the ops-only on/off toggle rather than
+    // a player's plain "/sleep" vote.
+    private static boolean isToggleArg(String[] split) {
+        return split.length >= 2
+                && (split[1].equalsIgnoreCase("on") || split[1].equalsIgnoreCase("off"));
+    }
+
+    private void handleSleepToggle(Player sender, String[] split) {
+        if (!canUse(sender, "/sleeptoggle")) {
+            deny(sender);
+            return;
+        }
+
+        if (split.length < 2
+                || !(split[1].equalsIgnoreCase("on") || split[1].equalsIgnoreCase("off"))) {
+            reply(sender, "Usage: /sleep <on|off>  (or just /sleep with no arguments to vote)");
+            return;
+        }
+
+        boolean on = split[1].equalsIgnoreCase("on");
+        SleepManager.getInstance().setEnabled(on);
+        reply(sender, "/sleep vote " + (on ? "enabled." : "disabled."));
     }
 
     private void handleWorldDownload(Player sender, String[] split) {

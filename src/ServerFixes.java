@@ -46,7 +46,8 @@ public class ServerFixes extends Plugin {
         etc.getInstance().addCommand("/fixes", "- Show ServerFixes status");
         etc.getInstance().addCommand("/spawnradius", "<blocks> - Set the spawn-protection radius");
         etc.getInstance().addCommand("/firespread", "<on|off> - Toggle fire spread protection");
-        etc.getInstance().addCommand("/sleep", "- Vote to sleep through the night");
+        etc.getInstance().addCommand("/lightingfix", "<on|off> - Toggle the lighting auto-fix (ops only)");
+        etc.getInstance().addCommand("/sleep", "- Vote to sleep through the night, or <on|off> to toggle it (ops only)");
         etc.getInstance().addCommand("/worlddownload", "<host> <port> - Zip and send the world to a remote host:port");
 
         log.info("[ServerFixes] Enabled. " + LightingFix.getInstance().chunksNudged()
@@ -58,6 +59,7 @@ public class ServerFixes extends Plugin {
         etc.getInstance().removeCommand("/fixes");
         etc.getInstance().removeCommand("/spawnradius");
         etc.getInstance().removeCommand("/firespread");
+        etc.getInstance().removeCommand("/lightingfix");
         etc.getInstance().removeCommand("/sleep");
         etc.getInstance().removeCommand("/worlddownload");
 

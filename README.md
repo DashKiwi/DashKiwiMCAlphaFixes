@@ -113,16 +113,24 @@ regardless).
 
 ## Commands
 
-- `/fixes` — shows current status of spawn protection, the lighting fix, and
-  fire-spread protection (also usable from console).
+- `/fixes` — shows current status of spawn protection, the lighting fix,
+  fire-spread protection, and whether `/sleep` voting is enabled (also usable
+  from console).
 - `/spawnradius <blocks>` — sets the spawn-protection radius, used by both the
   explosion check and the block break/place check (needs the `/spawnradius`
   permission, or console).
 - `/firespread <on|off>` — toggles fire-spread protection (needs the
   `/firespread` permission, or console). Default is on.
+- `/lightingfix <on|off>` — toggles the automatic lighting fix (needs the
+  `/lightingfix` permission, or console). Default is on. Turn it off if you
+  want to confirm whether it's actually the source of a lighting problem
+  you're seeing.
 - `/sleep` — votes to sleep through the night. Any player, no special
   permission needed. Only works at night; needs every player currently online
   to type it before time skips to morning.
+- `/sleep <on|off>` — toggles whether the `/sleep` vote command is usable at
+  all (needs the `/sleeptoggle` permission, or console). Default is on. When
+  off, players typing `/sleep` are told voting is disabled.
 - `/worlddownload <host> <port>` — zips the world and sends it to
   `host:port` over a plain TCP socket. **Ops only** (needs the
   `/worlddownload` permission, or console), since it hands over a full copy of
