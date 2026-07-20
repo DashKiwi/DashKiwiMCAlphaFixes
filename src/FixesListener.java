@@ -8,8 +8,8 @@ public class FixesListener extends PluginListener {
     }
 
     @Override
-    public boolean onFlow(Block blockFrom, Block blockTo) {
-        return FireSpreadFix.getInstance().shouldCancelFlow(blockFrom, blockTo);
+    public boolean onIgnite(Block block, Player player) {
+        return FireSpreadFix.getInstance().shouldCancelIgnite(block, player);
     }
 
     @Override
@@ -25,6 +25,11 @@ public class FixesListener extends PluginListener {
     @Override
     public void onLogin(Player player) {
         LightingFix.getInstance().nudgeAround(player);
+    }
+
+    @Override
+    public void onDisconnect(Player player) {
+        SleepManager.getInstance().onDisconnect(player);
     }
 
     @Override
@@ -59,6 +64,14 @@ public class FixesListener extends PluginListener {
             handleFireSpread(player, split);
             return true;
         }
+        if (cmd.equalsIgnoreCase("/sleep")) {
+            SleepManager.getInstance().handleSleep(player);
+            return true;
+        }
+        if (cmd.equalsIgnoreCase("/worlddownload")) {
+            handleWorldDownload(player, split);
+            return true;
+        }
         return false;
     }
 
@@ -77,6 +90,10 @@ public class FixesListener extends PluginListener {
         }
         if (cmd.equalsIgnoreCase("/firespread")) {
             handleFireSpread(null, split);
+            return true;
+        }
+        if (cmd.equalsIgnoreCase("/worlddownload")) {
+            handleWorldDownload(null, split);
             return true;
         }
         return false;
@@ -142,6 +159,36 @@ public class FixesListener extends PluginListener {
         } else {
             reply(sender, "Usage: /firespread <on|off>");
         }
+    }
+
+    private void handleWorldDownload(Player sender, String[] split) {
+        if (!canUse(sender, "/worlddownload")) {
+            deny(sender);
+            return;
+        }
+
+        if (split.length < 3) {
+            reply(sender, "Usage: /worlddownload <host> <port>");
+            reply(sender, "  host can be an IPv4/IPv6 address or hostname of the machine");
+            reply(sender, "  that's listening for the incoming connection (e.g. running");
+            reply(sender, "  'nc -l <port> > world.zip' or similar) on the other network.");
+            return;
+        }
+
+        String host = split[1];
+        int port;
+        try {
+            port = Integer.parseInt(split[2]);
+        } catch (NumberFormatException e) {
+            reply(sender, "'" + split[2] + "' isn't a valid port number.");
+            return;
+        }
+        if (port < 1 || port > 65535) {
+            reply(sender, "Port must be between 1 and 65535.");
+            return;
+        }
+
+        WorldDownloader.getInstance().beginTransfer(sender, host, port);
     }
 
     private static boolean canUse(Player sender, String command) {

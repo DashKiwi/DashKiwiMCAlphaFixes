@@ -144,53 +144,19 @@ public class SpawnProtection {
     // persistence
 
     private void load() {
-        File file = new File(CONFIG_FILE);
-        if (!file.exists()) {
-            save();
-            return;
-        }
-
-        Properties props = new Properties();
-        FileReader reader = null;
-        try {
-            reader = new FileReader(file);
-            props.load(reader);
-            explosionProtectionEnabled = Boolean.parseBoolean(props.getProperty("explosion-protection-enabled", "true"));
-            blockProtectionEnabled = Boolean.parseBoolean(props.getProperty("block-protection-enabled", "true"));
-            radius = Integer.parseInt(props.getProperty("radius", "16"));
-            buffer = Integer.parseInt(props.getProperty("buffer", "6"));
-        } catch (Exception e) {
-            log.warning("[ServerFixes] Failed to load " + CONFIG_FILE + ", using defaults: " + e);
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException ignored) {
-                }
-            }
-        }
+        SettingsStore store = SettingsStore.getInstance();
+        explosionProtectionEnabled = store.getBoolean("spawn.explosion-protection-enabled", true);
+        blockProtectionEnabled = store.getBoolean("spawn.block-protection-enabled", true);
+        radius = store.getInt("spawn.radius", 16);
+        buffer = store.getInt("spawn.buffer", 6);
     }
 
     private void save() {
-        Properties props = new Properties();
-        props.setProperty("explosion-protection-enabled", Boolean.toString(explosionProtectionEnabled));
-        props.setProperty("block-protection-enabled", Boolean.toString(blockProtectionEnabled));
-        props.setProperty("radius", Integer.toString(radius));
-        props.setProperty("buffer", Integer.toString(buffer));
-
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(CONFIG_FILE);
-            props.store(writer, "Spawn-protection settings");
-        } catch (IOException e) {
-            log.warning("[ServerFixes] Failed to save " + CONFIG_FILE + ": " + e);
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException ignored) {
-                }
-            }
-        }
+        SettingsStore store = SettingsStore.getInstance();
+        store.set("spawn.explosion-protection-enabled", explosionProtectionEnabled);
+        store.set("spawn.block-protection-enabled", blockProtectionEnabled);
+        store.set("spawn.radius", radius);
+        store.set("spawn.buffer", buffer);
+        store.save();
     }
 }

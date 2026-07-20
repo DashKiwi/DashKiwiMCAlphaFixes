@@ -1,13 +1,23 @@
 # ServerFixes
 
 An hMod plugin for old Minecraft servers (built/tested against Alpha 1.2.6) that
-bundles two unrelated fixes:
+bundles several unrelated fixes and utilities:
 
 1. **Spawn protection** — creeper explosions *and* ordinary player block
    breaking/placing near world spawn no longer affect the world.
 2. **Automatic lighting fix** — automates the "place/break a block nearby" trick
    that already fixes the lighting glitch you're seeing, so it happens on its own
    as players explore instead of needing to be manually triggered.
+3. **Fire spread protection** — stops fire from spreading on its own
+   (block-to-block, or lava setting things alight), server-wide. Deliberate
+   player ignitions (flint & steel, etc.) still work.
+4. **`/sleep` vote** — a chat-command stand-in for beds (which don't exist yet in
+   Alpha 1.2.6). When everyone online has typed `/sleep` during the night, time
+   skips straight to morning.
+5. **`/worlddownload`** — zips the world save folder and pushes it out over a
+   plain TCP socket to a host/port you give it, so you can grab a copy of the
+   world onto another machine on a different network without needing SSH/SCP
+   access to the server itself.
 
 ## Why this exists / how it works
 
@@ -51,6 +61,34 @@ relights a full vertical column, so it doesn't need to touch every block), once
 per chunk, ever. It's a workaround riding on the same mechanism as the manual
 fix, not a guaranteed root-cause fix, see the caveats below.
 
+**Fire spread protection.** Fire spreading uses a hook,
+`Hook.IGNITE`, fired as `onIgnite(Block block, Player player)` whenever any
+block is about to catch fire, whether that's fire spreading to a neighboring
+flammable block, lava igniting something nearby, or a player using flint &
+steel. `player` is only non-null when a player directly caused it. This plugin
+now hooks `IGNITE` and cancels every ignition where `player == null` while
+enabled, that's the "spreading on its own" case, without blocking players who
+deliberately light something with flint & steel.
+
+**`/sleep`.** Alpha 1.2.6 has no beds (added later, in Beta 1.7), so there's no
+vanilla sleep event to hook. This is a plain chat-command vote instead: typing
+`/sleep` only works while `etc.getServer().getTime()` is in the game's night
+window; it adds you to a "sleeping" set and tells everyone how many are in so
+far. Once everyone currently online is in the set, time is fast-forwarded to
+the next morning (`setTime` to the next multiple of the 24000-tick day length)
+and the set is cleared. Nothing skips the night unless *everybody* online has
+voted. Once it's day, `/sleep` naturally goes back to telling you to wait for
+night, no separate "already skipped tonight" flag needed. A player
+disconnecting is dropped from the vote and the remaining players are
+re-checked immediately, in case that was the last holdout.
+
+**`/worlddownload`.** Zips the world save folder (its name is read from
+`level-name` in `server.properties`, defaulting to `world` if that's missing)
+and streams it straight into a TCP socket connected out to the host/port you
+give the command, no external libraries, no listening port opened on the
+server side, no encryption or authentication either (see the command section
+below for what that means in practice).
+
 ## Install
 
 1. Drop `ServerFixes.jar` into your server's plugin folder.
@@ -60,11 +98,14 @@ fix, not a guaranteed root-cause fix, see the caveats below.
    ```
 3. Restart the server.
 
-Two files are created next to the server jar the first time it runs:
+A couple files are created next to the server jar the first time it runs:
 
-- `serverfixes-spawn.properties` — spawn-protection settings.
+- `serverfixes-settings.properties` — serverfixes settings file.
 - `serverfixes-relit-chunks.dat` — chunks already nudged for lighting, so it's
   never redone.
+
+`/sleep` votes and in-progress `/worlddownload` transfers are purely in-memory
+and don't persist across a restart.
 
 To let a group build inside the spawn-protected area, give it the
 `/spawnbypass` permission via your usual hMod groups setup (ops always bypass
@@ -72,11 +113,38 @@ regardless).
 
 ## Commands
 
-- `/fixes` — shows current status of all three protections (also usable from
-  console).
+- `/fixes` — shows current status of spawn protection, the lighting fix, and
+  fire-spread protection (also usable from console).
 - `/spawnradius <blocks>` — sets the spawn-protection radius, used by both the
   explosion check and the block break/place check (needs the `/spawnradius`
   permission, or console).
+- `/firespread <on|off>` — toggles fire-spread protection (needs the
+  `/firespread` permission, or console). Default is on.
+- `/sleep` — votes to sleep through the night. Any player, no special
+  permission needed. Only works at night; needs every player currently online
+  to type it before time skips to morning.
+- `/worlddownload <host> <port>` — zips the world and sends it to
+  `host:port` over a plain TCP socket. **Ops only** (needs the
+  `/worlddownload` permission, or console), since it hands over a full copy of
+  the world. `host` can be a hostname, IPv4 address, or IPv6 address (with or
+  without `[brackets]`).
+
+  You need something listening on the other end *before* running the command,
+  since the server connects out to you, e.g. on the receiving machine:
+  ```
+  nc -l 4444 > world.zip        # or: nc -l -p 4444 > world.zip, depending on your nc
+  ```
+  then in-game or console: `/worlddownload your.ipv6.address 4444`.
+
+  **Security note:** this transfer is plain TCP, not encrypted or
+  authenticated. Anyone who can see that network traffic in flight, or who
+  connects to that port before you do, could intercept or receive the world
+  instead of you. Treat the host/port as a one-time secret: stand up the
+  listener right before you run the command, use it once, and don't leave it
+  sitting open. If you need this over an untrusted network, run it through an
+  SSH tunnel (`ssh -R` from the server, or `-L`/`-D` from your end) rather than
+  exposing the raw port directly, that's genuinely more secure than anything
+  a plugin can do on its own without pulling in a TLS library.
 
 ## Notes / things worth knowing
 
